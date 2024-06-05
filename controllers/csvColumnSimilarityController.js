@@ -9,6 +9,10 @@ const ColumnSimilarity = (req, res) => {
       return res.status(400).json("No file uploaded.");
     }
 
+    const { targetString, similarityThreshold = 0.3 } = req.body;
+    if (!targetString) {
+      return res.status(400).send("Target string is required.");
+    }
     const filePath = path.join(__dirname, "../uploads", req.file.filename);
     const results = [];
 

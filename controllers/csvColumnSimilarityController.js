@@ -9,9 +9,11 @@ const ColumnSimilarity = (req, res) => {
       return res.status(400).json("No file uploaded.");
     }
 
-    const { targetString, similarityThreshold = 0.3 } = req.body;
-    if (!targetString) {
-      return res.status(400).send("Target string is required.");
+    const { targetString, similarityThreshold = 0.3, columnName } = req.body;
+    if (!targetString || !columnName) {
+      return res
+        .status(400)
+        .send("Target string and column name are required.");
     }
     const filePath = path.join(__dirname, "../uploads", req.file.filename);
     const results = [];
@@ -19,24 +21,23 @@ const ColumnSimilarity = (req, res) => {
     fs.createReadStream(filePath)
       .pipe(csv())
       .on("data", (data) => {
-        console.log(data);
-        let isSimilar = false;
+        // Trim keys to handle extra quotes or spaces
+        const trimmedData = {};
         for (const key in data) {
           if (data.hasOwnProperty(key)) {
-            const similarity = stringSimilarity.compareTwoStrings(
-              data[key],
-              targetString
-            );
-            if (similarity > similarityThreshold) {
-              console.log("sm", similarityThreshold);
-              console.log(similarity);
-              isSimilar = true;
-              break;
-            }
+            const trimmedKey = key.trim();
+            trimmedData[trimmedKey] = data[key];
           }
         }
-        if (isSimilar) {
-          results.push(data);
+
+        if (trimmedData.hasOwnProperty(columnName)) {
+          const similarity = stringSimilarity.compareTwoStrings(
+            trimmedData[columnName],
+            targetString
+          );
+          if (similarity > similarityThreshold) {
+            results.push(trimmedData);
+          }
         }
       })
       .on("end", () => {
@@ -49,6 +50,31 @@ const ColumnSimilarity = (req, res) => {
       .on("error", (err) => {
         res.status(500).send("Error processing file.");
       });
+
+    // fs.createReadStream(filePath)
+    //   .pipe(csv())
+    //   .on("data", (data) => {
+    //     console.log(data);
+    //     if (data.hasOwnProperty("Name")) {
+    //       const similarity = stringSimilarity.compareTwoStrings(
+    //         data[columnName],
+    //         targetString
+    //       );
+    //       if (similarity > similarityThreshold) {
+    //         results.push(data);
+    //       }
+    //     }
+    //   })
+    //   .on("end", () => {
+    //     // Delete the file after processing
+    //     fs.unlinkSync(filePath);
+
+    //     // Send the JSON response
+    //     res.json(results);
+    //   })
+    //   .on("error", (err) => {
+    //     res.status(500).send("Error processing file.");
+    //   });
   } catch (error) {
     console.log(error);
   }

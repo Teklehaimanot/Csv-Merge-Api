@@ -6,7 +6,7 @@ const stringSimilarity = require("string-similarity");
 const ColumnSimilarity = (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).send("No file uploaded.");
+      return res.status(400).json("No file uploaded.");
     }
 
     const filePath = path.join(__dirname, "../uploads", req.file.filename);

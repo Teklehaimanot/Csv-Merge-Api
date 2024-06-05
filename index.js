@@ -1,10 +1,13 @@
-const mfrData = require("./mfr.json");
 const csvSimilarityRoute = require("./routes/csvColumnSimilarityRoutes");
 const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("We are on the home page");

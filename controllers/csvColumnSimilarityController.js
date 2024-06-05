@@ -1,80 +1,58 @@
 const csv = require("csv-parser");
-const fs = require("fs");
-const path = require("path");
 const stringSimilarity = require("string-similarity");
+const { Readable } = require("stream");
 
 const ColumnSimilarity = (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json("No file uploaded.");
-    }
+    const {
+      csvContent,
+      targetString,
+      columnName,
+      similarityThreshold = 0.3,
+    } = req.body;
 
-    const { targetString, similarityThreshold = 0.3, columnName } = req.body;
-    if (!targetString || !columnName) {
+    if (!csvContent || !targetString || !columnName) {
       return res
         .status(400)
-        .send("Target string and column name are required.");
+        .send("CSV content, target string, and column name are required.");
     }
-    const filePath = path.join(__dirname, "../uploads", req.file.filename);
-    const results = [];
 
-    fs.createReadStream(filePath)
+    const results = [];
+    const stream = Readable.from(csvContent);
+
+    stream
       .pipe(csv())
       .on("data", (data) => {
-        // Trim keys to handle extra quotes or spaces
-        const trimmedData = {};
+        // Create a new object with trimmed and cleaned keys
+        const cleanedData = {};
         for (const key in data) {
           if (data.hasOwnProperty(key)) {
-            const trimmedKey = key.trim();
-            trimmedData[trimmedKey] = data[key];
+            let cleanedKey = key.trim();
+            // Remove surrounding quotes if present
+            cleanedKey = cleanedKey.replace(/^["']|["']$/g, "");
+            cleanedData[cleanedKey] = data[key];
           }
         }
 
-        if (trimmedData.hasOwnProperty(columnName)) {
+        if (cleanedData.hasOwnProperty(columnName)) {
           const similarity = stringSimilarity.compareTwoStrings(
-            trimmedData[columnName],
-            targetString
+            targetString.toLowerCase(),
+            cleanedData[columnName].toLowerCase()
           );
+          console.log(similarity);
           if (similarity > similarityThreshold) {
-            results.push(trimmedData);
+            // You can adjust the similarity threshold here
+            results.push(cleanedData);
           }
         }
       })
       .on("end", () => {
-        // Delete the file after processing
-        fs.unlinkSync(filePath);
-
-        // Send the JSON response
         res.json(results);
+        console.log(results);
       })
       .on("error", (err) => {
-        res.status(500).send("Error processing file.");
+        res.status(500).send("Error processing CSV content.");
       });
-
-    // fs.createReadStream(filePath)
-    //   .pipe(csv())
-    //   .on("data", (data) => {
-    //     console.log(data);
-    //     if (data.hasOwnProperty("Name")) {
-    //       const similarity = stringSimilarity.compareTwoStrings(
-    //         data[columnName],
-    //         targetString
-    //       );
-    //       if (similarity > similarityThreshold) {
-    //         results.push(data);
-    //       }
-    //     }
-    //   })
-    //   .on("end", () => {
-    //     // Delete the file after processing
-    //     fs.unlinkSync(filePath);
-
-    //     // Send the JSON response
-    //     res.json(results);
-    //   })
-    //   .on("error", (err) => {
-    //     res.status(500).send("Error processing file.");
-    //   });
   } catch (error) {
     console.log(error);
   }

@@ -6,7 +6,7 @@ const csvSimilarityController = require("../controllers/csvColumnSimilarityContr
 const upload = multer({ dest: "uploads/" });
 
 router.post(
-  "/upload",
+  "/ColumnSimilarity",
   upload.single("file"),
   csvSimilarityController.ColumnSimilarity
 );

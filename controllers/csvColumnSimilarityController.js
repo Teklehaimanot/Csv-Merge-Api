@@ -19,6 +19,7 @@ const ColumnSimilarity = (req, res) => {
     fs.createReadStream(filePath)
       .pipe(csv())
       .on("data", (data) => {
+        console.log(data);
         let isSimilar = false;
         for (const key in data) {
           if (data.hasOwnProperty(key)) {
@@ -27,6 +28,8 @@ const ColumnSimilarity = (req, res) => {
               targetString
             );
             if (similarity > similarityThreshold) {
+              console.log("sm", similarityThreshold);
+              console.log(similarity);
               isSimilar = true;
               break;
             }

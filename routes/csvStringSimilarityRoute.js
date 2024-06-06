@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const csvSimilarityController = require("../controllers/csvColumnSimilarityController");
+const csvSimilarityController = require("../controllers/csvStringSimilarityController");
 
 const upload = multer({ dest: "uploads/" });
 

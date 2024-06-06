@@ -11,4 +11,10 @@ router.post(
   csvSimilarityController.ColumnSimilarity
 );
 
+router.post(
+  "/replaceStrings",
+  upload.single("file"),
+  csvSimilarityController.replaceColumnStrings
+);
+
 module.exports = router;

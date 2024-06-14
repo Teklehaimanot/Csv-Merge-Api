@@ -64,7 +64,7 @@ replaceColumnStrings = (req, res) => {
     if (!csvResults || !replacingString || !columnName) {
       return res
         .status(400)
-        .send("csv result, replacing string, and column name are required.");
+        .send("CSV result, replacing string, and column name are required.");
     }
     const results = [];
     const stream = Readable.from(csvResults);

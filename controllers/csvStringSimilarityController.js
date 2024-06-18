@@ -99,10 +99,15 @@ const replaceColumnStrings = (req, res) => {
 const mergeCsv = async (req, res) => {
   try {
     const { csvFilteredResult, csvOriginal, csvToBeReplaced } = req.body;
-
     const csvFilteredResultData = await parseCsv(csvFilteredResult);
     const csvOriginalData = await parseCsv(csvOriginal);
     const csvToBeReplacedData = await parseCsv(csvToBeReplaced);
+
+    if (!csvFilteredResult || !csvOriginal || !csvToBeReplaced) {
+      return res
+        .status(400)
+        .send("All csv files are required including the origional csv content");
+    }
 
     const mergedData = mergeCsvData(
       csvOriginalData,
@@ -112,7 +117,7 @@ const mergeCsv = async (req, res) => {
 
     console.log(mergedData);
 
-    res.status(200).json();
+    res.status(200).json(mergedData);
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred during processing.");
@@ -122,7 +127,7 @@ const mergeCsv = async (req, res) => {
 const parseCsv = (csvString) => {
   return new Promise((resolve, reject) => {
     const results = [];
-    const stream = Readable.from([csvString]);
+    const stream = Readable.from(csvString);
     stream
       .pipe(csv())
       .on("data", (data) => results.push(data))

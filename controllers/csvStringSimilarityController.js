@@ -115,8 +115,6 @@ const mergeCsv = async (req, res) => {
       csvFilteredResultData
     );
 
-    console.log(mergedData);
-
     res.status(200).json(mergedData);
   } catch (error) {
     console.error(error);

@@ -5,5 +5,6 @@ const csvSimilarityController = require("../controllers/csvStringSimilarityContr
 router.post("/ColumnSimilarity", csvSimilarityController.ColumnSimilarity);
 
 router.post("/replaceStrings", csvSimilarityController.replaceColumnStrings);
+router.post("/csvMerge", csvSimilarityController.mergeCsv);
 
 module.exports = router;

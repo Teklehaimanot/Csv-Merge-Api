@@ -57,7 +57,7 @@ const ColumnSimilarity = (req, res) => {
   }
 };
 
-replaceColumnStrings = (req, res) => {
+const replaceColumnStrings = (req, res) => {
   try {
     const { csvResults, columnName, replacingString } = req.body;
 
@@ -96,7 +96,59 @@ replaceColumnStrings = (req, res) => {
   }
 };
 
+const mergeCsv = async (req, res) => {
+  try {
+    const { csvFilteredResult, csvOriginal, csvToBeReplaced } = req.body;
+
+    const csvFilteredResultData = await parseCsv(csvFilteredResult);
+    const csvOriginalData = await parseCsv(csvOriginal);
+    const csvToBeReplacedData = await parseCsv(csvToBeReplaced);
+
+    const mergedData = mergeCsvData(
+      csvOriginalData,
+      csvToBeReplacedData,
+      csvFilteredResultData
+    );
+
+    console.log(mergedData);
+
+    res.status(200).json();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred during processing.");
+  }
+};
+
+const parseCsv = (csvString) => {
+  return new Promise((resolve, reject) => {
+    const results = [];
+    const stream = Readable.from([csvString]);
+    stream
+      .pipe(csv())
+      .on("data", (data) => results.push(data))
+      .on("end", () => resolve(results))
+      .on("error", (err) => reject(err));
+  });
+};
+
+function mergeCsvData(original, toBeReplaced, filteredResult) {
+  const originalMap = new Map();
+  original.forEach((row, index) => {
+    originalMap.set(JSON.stringify(row), index);
+  });
+
+  filteredResult.forEach((filteredRow, index) => {
+    const originalIndex = originalMap.get(JSON.stringify(filteredRow));
+    if (originalIndex !== undefined) {
+      original[originalIndex] = toBeReplaced[index];
+    }
+  });
+
+  return original;
+}
+
 module.exports = {
   ColumnSimilarity,
   replaceColumnStrings,
+  mergeCsv,
 };

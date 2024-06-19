@@ -1,6 +1,7 @@
 const csv = require("csv-parser");
 const stringSimilarity = require("string-similarity");
 const { Readable } = require("stream");
+const _ = require("lodash");
 
 const ColumnSimilarity = (req, res) => {
   try {
@@ -47,6 +48,7 @@ const ColumnSimilarity = (req, res) => {
         }
       })
       .on("end", () => {
+        console.log(results[0]);
         res.json(results);
       })
       .on("error", (err) => {
@@ -115,6 +117,7 @@ const mergeCsv = async (req, res) => {
       csvFilteredResultData
     );
 
+    // console.log(mergedData);
     res.status(200).json(mergedData);
   } catch (error) {
     console.error(error);
@@ -135,19 +138,20 @@ const parseCsv = (csvString) => {
 };
 
 function mergeCsvData(original, toBeReplaced, filteredResult) {
-  const originalMap = new Map();
-  original.forEach((row, index) => {
-    originalMap.set(JSON.stringify(row), index);
-  });
+  const mergedResult = [];
 
-  filteredResult.forEach((filteredRow, index) => {
-    const originalIndex = originalMap.get(JSON.stringify(filteredRow));
-    if (originalIndex !== undefined) {
-      original[originalIndex] = toBeReplaced[index];
+  console.log(_.isEqual(original[0], filteredResult[0]));
+
+  for (let i = 0; i < filteredResult.length; i++) {
+    for (let j = 0; j < original.length; j++) {
+      if (_.isEqual(filteredResult[i], original[j])) {
+        console.log(filteredResult[i]);
+        mergedResult.push(toBeReplaced[i]);
+      } else mergedResult.push(original[j]);
     }
-  });
+  }
 
-  return original;
+  return mergedResult;
 }
 
 module.exports = {

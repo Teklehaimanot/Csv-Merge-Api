@@ -9,7 +9,7 @@ const ColumnSimilarity = (req, res) => {
       csvContent,
       targetString,
       columnName,
-      similarityThreshold = 0.3,
+      similarityThreshold = 0.5,
     } = req.body;
 
     if (!csvContent || !targetString || !columnName) {

@@ -48,7 +48,6 @@ const ColumnSimilarity = (req, res) => {
         }
       })
       .on("end", () => {
-        console.log(results[0]);
         res.json(results);
       })
       .on("error", (err) => {
@@ -139,8 +138,6 @@ const parseCsv = (csvString) => {
 
 function mergeCsvData(original, toBeReplaced, filteredResult) {
   const mergedResult = [];
-
-  console.log(_.isEqual(original[0], filteredResult[0]));
 
   for (let i = 0; i < filteredResult.length; i++) {
     for (let j = 0; j < original.length; j++) {

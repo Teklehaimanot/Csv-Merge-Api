@@ -2,6 +2,7 @@ const csv = require("csv-parser");
 const stringSimilarity = require("string-similarity");
 const { Readable } = require("stream");
 const _ = require("lodash");
+const Papa = require("papaparse");
 
 const ColumnSimilarity = (req, res) => {
   try {
@@ -13,48 +14,37 @@ const ColumnSimilarity = (req, res) => {
     } = req.body;
 
     if (!csvContent || !targetString || !columnName) {
-      return res
-        .status(400)
-        .send("CSV content, target string, and column name are required.");
+      return res.status(400).json({
+        error: "CSV content, target string, and column name are required.",
+      });
     }
 
-    const results = [];
-    const stream = Readable.from(csvContent);
-
-    stream
-      .pipe(csv())
-      .on("data", (data) => {
-        // Create a new object with trimmed and cleaned keys
-        const cleanedData = {};
-        for (const key in data) {
-          if (data.hasOwnProperty(key)) {
-            let cleanedKey = key.trim();
-            // Remove surrounding quotes if present
-            cleanedKey = cleanedKey.replace(/^["']|["']$/g, "");
-            cleanedData[cleanedKey] = data[key];
+    // Parse the CSV content using PapaParse
+    Papa.parse(csvContent, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data;
+        const filteredResults = data.filter((row) => {
+          if (row.hasOwnProperty(columnName)) {
+            const similarity = stringSimilarity.compareTwoStrings(
+              targetString.toLowerCase(),
+              row[columnName].toLowerCase()
+            );
+            return similarity > similarityThreshold;
           }
-        }
+          return false;
+        });
 
-        if (cleanedData.hasOwnProperty(columnName)) {
-          const similarity = stringSimilarity.compareTwoStrings(
-            targetString.toLowerCase(),
-            cleanedData[columnName].toLowerCase()
-          );
-
-          if (similarity > similarityThreshold) {
-            // You can adjust the similarity threshold here
-            results.push(cleanedData);
-          }
-        }
-      })
-      .on("end", () => {
-        res.json(results);
-      })
-      .on("error", (err) => {
-        res.status(500).send("Error processing CSV content.");
-      });
+        res.json(filteredResults);
+      },
+      error: (error) => {
+        res.status(500).json({ error: "Error processing CSV content." });
+      },
+    });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Unexpected error occurred." });
   }
 };
 
@@ -63,64 +53,31 @@ const replaceColumnStrings = (req, res) => {
     const { csvResults, columnName, replacingString } = req.body;
 
     if (!csvResults || !replacingString || !columnName) {
-      return res
-        .status(400)
-        .send("CSV result, replacing string, and column name are required.");
-    }
-    const results = [];
-    const stream = Readable.from(csvResults);
-
-    stream
-      .pipe(csv())
-      .on("data", (data) => {
-        const cleanedData = {};
-        for (const key in data) {
-          if (data.hasOwnProperty(key)) {
-            let cleanedKey = key.trim();
-            cleanedKey = cleanedKey.replace(/^["']|["']$/g, "");
-            cleanedData[cleanedKey] = data[key];
-          }
-        }
-        if (cleanedData.hasOwnProperty(columnName)) {
-          cleanedData[columnName] = replacingString;
-          results.push(cleanedData);
-        }
-      })
-      .on("end", () => {
-        res.json(results);
-      })
-      .on("error", (err) => {
-        res.status(500).send("Error processing CSV content.");
+      return res.status(400).json({
+        error: "CSV result, replacing string, and column name are required.",
       });
+    }
+
+    Papa.parse(csvResults, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data;
+        const modifiedData = data.map((row) => {
+          if (row.hasOwnProperty(columnName)) {
+            row[columnName] = replacingString;
+          }
+          return row;
+        });
+        res.status(200).json(modifiedData);
+      },
+      error: (error) => {
+        res.status(500).json({ error: "Error processing CSV content." });
+      },
+    });
   } catch (error) {
     console.log(error);
-  }
-};
-
-const mergeCsv = async (req, res) => {
-  try {
-    const { csvFilteredResult, csvOriginal, csvToBeReplaced } = req.body;
-    const csvFilteredResultData = await parseCsv(csvFilteredResult);
-    const csvOriginalData = await parseCsv(csvOriginal);
-    const csvToBeReplacedData = await parseCsv(csvToBeReplaced);
-
-    if (!csvFilteredResult || !csvOriginal || !csvToBeReplaced) {
-      return res
-        .status(400)
-        .send("All csv files are required including the origional csv content");
-    }
-
-    const mergedData = mergeCsvData(
-      csvOriginalData,
-      csvToBeReplacedData,
-      csvFilteredResultData
-    );
-
-    // console.log(mergedData);
-    res.status(200).json(mergedData);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred during processing.");
+    res.status(500).json({ error: "Unexpected error occurred." });
   }
 };
 
@@ -136,20 +93,71 @@ const parseCsv = (csvString) => {
   });
 };
 
-function mergeCsvData(original, toBeReplaced, filteredResult) {
+const mergeCsvData = (original, toBeReplaced, filteredResult) => {
   const mergedResult = [];
+  const replacementMap = new Map();
 
-  for (let i = 0; i < filteredResult.length; i++) {
-    for (let j = 0; j < original.length; j++) {
-      if (_.isEqual(filteredResult[i], original[j])) {
-        console.log(filteredResult[i]);
-        mergedResult.push(toBeReplaced[i]);
-      } else mergedResult.push(original[j]);
+  // Create a map of filtered results for quick lookup
+  filteredResult.forEach((item, index) => {
+    replacementMap.set(JSON.stringify(item), toBeReplaced[index]);
+  });
+
+  original.forEach((item) => {
+    const itemStr = JSON.stringify(item);
+    if (replacementMap.has(itemStr)) {
+      mergedResult.push(replacementMap.get(itemStr));
+    } else {
+      mergedResult.push(item);
     }
-  }
+  });
 
   return mergedResult;
-}
+};
+
+const mergeCsv = async (req, res) => {
+  try {
+    const { csvFilteredResult, csvOriginal, csvToBeReplaced } = req.body;
+
+    console.log(req.body);
+    if (!csvFilteredResult || !csvOriginal || !csvToBeReplaced) {
+      return res.status(400).json({
+        error: "All CSV files are required including the original CSV content",
+      });
+    }
+
+    const csvFilteredResultData = await parseCsv(csvFilteredResult);
+    const csvOriginalData = await parseCsv(csvOriginal);
+    const csvToBeReplacedData = await parseCsv(csvToBeReplaced);
+
+    console.log("Original Data Length:", csvOriginalData.length);
+    console.log("Filtered Result Data Length:", csvFilteredResultData.length);
+    console.log("To Be Replaced Data Length:", csvToBeReplacedData.length);
+
+    const mergedData = mergeCsvData(
+      csvOriginalData,
+      csvToBeReplacedData,
+      csvFilteredResultData
+    );
+
+    console.log("Merged Data Length:", mergedData.length);
+
+    // Check the size of mergedData before sending it
+    const mergedDataString = JSON.stringify(mergedData);
+    console.log("Merged Data Size:", mergedDataString.length);
+
+    if (mergedDataString.length > 10000000) {
+      // 1MB size limit as an example
+      return res
+        .status(400)
+        .json({ error: "Merged data is too large to process" });
+    }
+
+    res.status(200).json(mergedData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "An error occurred during processing." });
+  }
+};
 
 module.exports = {
   ColumnSimilarity,

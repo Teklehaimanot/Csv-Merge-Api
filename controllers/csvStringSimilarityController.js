@@ -35,8 +35,12 @@ const ColumnSimilarity = (req, res) => {
           }
           return false;
         });
-
-        res.json(filteredResults);
+        if (filteredResults.length > 0) {
+          return res.status(200).json(filteredResults);
+        } else
+          return res.status(400).json({
+            error: "No Result Found. Please Adjust Your Percentage",
+          });
       },
       error: (error) => {
         res.status(500).json({ error: "Error processing CSV content." });

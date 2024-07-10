@@ -6,15 +6,23 @@ require("dotenv").config();
 const app = express();
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-// app.use(cors());
-app.use(
-  cors({
-    origin: ["https://smartcsvtool.com:3000", "http://localhost:3000"],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true,
-  })
-);
 
+// Define CORS options
+const corsOptions = {
+  origin: ["https://smartcsvtool.com", "http://localhost:3000"],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+};
+
+// Apply CORS middleware globally
+app.use(cors(corsOptions));
+
+// Handle preflight requests for all routes
+app.options("*", cors(corsOptions));
+
+app.get("/", (req, res) => {
+  res.send("We are on the home page");
+});
 app.get("/", (req, res) => {
   res.send("We are on the home page");
 });

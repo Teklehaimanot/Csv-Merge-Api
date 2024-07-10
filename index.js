@@ -6,7 +6,14 @@ require("dotenv").config();
 const app = express();
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-app.use(cors());
+// app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Allow requests from this origin
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true, // Allow cookies to be sent
+  })
+);
 
 app.get("/", (req, res) => {
   res.send("We are on the home page");

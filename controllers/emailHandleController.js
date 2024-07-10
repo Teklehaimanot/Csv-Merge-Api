@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 const emailHandler = async (req, res) => {
   try {
     console.log(req.body);
-    console.log(process.env.EMAIL_USER);
+
     const { name, email, message } = req.body;
     const transporter = nodemailer.createTransport({
       service: "gmail", // use your email service
@@ -12,7 +12,7 @@ const emailHandler = async (req, res) => {
         pass: process.env.EMAIL_PASS, // your email password or app-specific password
       },
     });
-    console.log(process.env.EMAIL_USER);
+
     const mailOptions = {
       from: email,
       to: process.env.EMAIL_USER, // your email

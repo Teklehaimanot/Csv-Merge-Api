@@ -12,7 +12,7 @@ const emailHandler = async (req, res) => {
         pass: process.env.EMAIL_PASS, // your email password or app-specific password
       },
     });
-
+    console.log(process.env.EMAIL_USER);
     const mailOptions = {
       from: email,
       to: process.env.EMAIL_USER, // your email

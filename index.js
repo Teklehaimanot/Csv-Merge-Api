@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // app.use(cors());
 app.use(
   cors({
-    origin: "http://localhost:3000", // Allow requests from this origin
+    origin: "https://smartcsvtool.com", // Allow requests from this origin
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true, // Allow cookies to be sent
   })

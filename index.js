@@ -13,6 +13,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/csv", require("./routes/csvStringSimilarityRoute"));
+app.use("/api/v1/contact", require("./routes/emailHandlerRoute"));
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

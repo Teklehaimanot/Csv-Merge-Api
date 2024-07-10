@@ -27,8 +27,13 @@ app.get("/", (req, res) => {
   res.send("We are on the home page");
 });
 
-app.use("/api/v1/csv", require("./routes/csvStringSimilarityRoute"));
-app.use("/api/v1/contact", require("./routes/emailHandlerRoute"));
+// Import routes
+const csvStringSimilarityRoute = require("./routes/csvStringSimilarityRoute");
+const emailHandlerRoute = require("./routes/emailHandlerRoute");
+
+// Explicitly set CORS headers for specific routes if needed
+app.use("/api/v1/csv", cors(corsOptions), csvStringSimilarityRoute);
+app.use("/api/v1/contact", cors(corsOptions), emailHandlerRoute);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server is running on port ${port}`));

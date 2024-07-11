@@ -20,7 +20,12 @@ const emailHandler = async (req, res) => {
       text: message,
     };
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log(error);
+      }
+      console.log("Message sent: %s", info.messageId);
+    });
     res.status(200).json({ message: "Message sent successfully!" });
   } catch (error) {
     console.error("Error sending email:", error);

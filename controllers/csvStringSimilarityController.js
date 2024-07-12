@@ -4,7 +4,7 @@ const { Readable } = require("stream");
 const _ = require("lodash");
 const Papa = require("papaparse");
 
-const ColumnSimilarity = (req, res) => {
+const ColumnSimilarity = async (req, res) => {
   try {
     const {
       csvContent,
@@ -12,6 +12,10 @@ const ColumnSimilarity = (req, res) => {
       columnName,
       similarityThreshold = 0.5,
     } = req.body;
+
+    const metaphoneModule = await import("metaphone");
+    const metaphone =
+      metaphoneModule.default || metaphoneModule.metaphone || metaphoneModule;
 
     if (!csvContent || !targetString || !columnName) {
       return res.status(400).json({
@@ -27,10 +31,15 @@ const ColumnSimilarity = (req, res) => {
         const data = results.data;
         const filteredResults = data.filter((row) => {
           if (row.hasOwnProperty(columnName)) {
-            const similarity = stringSimilarity.compareTwoStrings(
+            const originalSimilarity = stringSimilarity.compareTwoStrings(
               targetString.toLowerCase(),
               row[columnName].toLowerCase()
             );
+            const phoneticSimilarity = stringSimilarity.compareTwoStrings(
+              metaphone(targetString.toLowerCase()),
+              metaphone(row[columnName].toLowerCase())
+            );
+            const similarity = (originalSimilarity + phoneticSimilarity) / 2;
             return similarity > similarityThreshold;
           }
           return false;

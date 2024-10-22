@@ -2,6 +2,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 require("dotenv").config();
+const morgan = require("morgan");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(bodyParser.json({ limit: "50mb" }));
@@ -24,6 +27,18 @@ app.use(cors(corsOptions));
 
 // Handle preflight requests for all routes
 app.options("*", cors(corsOptions));
+
+// Create a write stream (in append mode) for logging
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+// Setup morgan middleware to log incoming requests to 'access.log'
+app.use(morgan("combined", { stream: accessLogStream }));
+
+// For console logging as well, use 'tiny' or 'dev' preset
+app.use(morgan("dev"));
 
 app.get("/", (req, res) => {
   res.send("We are on the home page");
